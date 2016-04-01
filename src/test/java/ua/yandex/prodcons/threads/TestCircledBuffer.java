@@ -32,7 +32,7 @@ public class TestCircledBuffer {
 
     @Test
     public void testCircledBuffer_Blocking() {
-        int numberOfTrades = 1000 ;
+        int numberOfTrades = 100;
         Integer[] produced = new Integer[numberOfTrades];
         int expectedSum = 0;
         for (int i = 0; i < numberOfTrades; i++) {
@@ -51,6 +51,13 @@ public class TestCircledBuffer {
         }
         int result = 0;
         for (int i = 0; i < numberOfTrades; i++) {
+            while (buffer.isEmpty()) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             result += buffer.poll();
         }
         assertEquals(expectedSum, result);
@@ -58,20 +65,27 @@ public class TestCircledBuffer {
 
     @Test
     public void testCircledBuffer_ProducerConsumerPatternTest() {
-        int N = 100;
-        Thread[] threads = new Thread[2*N];
-        for (int i = 0; i < N; i++) {
-            threads[2*i] = new Thread(new Producer(buffer));
-            threads[2*i+1] = new Thread(new Consumer(buffer));
-            threads[2*i].start();
-            threads[2*i+1].start();
+        int numberOfTests = 10;
+        for (int randomTests = 1; randomTests <= numberOfTests; randomTests++) {
+            startOperationsBetweenProducersAndConsumers(randomTests * 20);
         }
-        Producer.work = false;
+    }
+
+    private void startOperationsBetweenProducersAndConsumers(int N) {
+        for (int i = 0; i < N; i++) {
+            new Thread(new Producer(buffer)).start();
+            new Thread(new Consumer(buffer)).start();
+        }
         try {
-            Thread.sleep(3000);
+            Thread.sleep(1000);
+            Producer.work = false;
+            Consumer.work = false;
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertEquals(Producer.expected, Consumer.result);
+        assertEquals(Producer.expectedSum, Consumer.result);
+        assertEquals(Producer.getTradesProduced(), Consumer.getTradesConsumed());
+        assertEquals(true, buffer.isEmpty());
     }
 }
