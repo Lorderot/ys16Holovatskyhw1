@@ -1,8 +1,6 @@
-package ua.yandex.prodcons.threads;
+package ua.yandex.prodcons.utilconcurrent;
 
 import org.junit.Test;
-
-import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 /**
@@ -31,7 +29,7 @@ public class TestCircledBuffer {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertEquals(Producer.expectedSum, Consumer.result);
+        assertEquals(Producer.expectedSum.get(), Consumer.result.get());
         assertEquals(Producer.getTradesProduced(), Consumer.getTradesConsumed());
         assertEquals(true, buffer.isEmpty());
         System.out.println("Test with " + N + " Consumers and Producers has been done");

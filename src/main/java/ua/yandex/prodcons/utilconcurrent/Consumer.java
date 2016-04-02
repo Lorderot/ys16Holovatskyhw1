@@ -1,13 +1,15 @@
-package ua.yandex.prodcons.threads;
+package ua.yandex.prodcons.utilconcurrent;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Mykola Holovatsky
  */
 public class Consumer implements Runnable {
     public static volatile boolean work = true;
-    public static volatile Long result = new Long(0);
-    private static final Object sumLocker = new Object();
-    private static volatile Integer tradesConsumed = 0;
+    public static AtomicLong result = new AtomicLong(0);
+    private static AtomicInteger tradesConsumed = new AtomicInteger(0);
     private CircledBuffer<Integer> buffer;
 
     public Consumer(CircledBuffer<Integer> buffer) {
@@ -18,15 +20,13 @@ public class Consumer implements Runnable {
     public void run() {
         while (work || !buffer.isEmpty()) {
             Integer element = pollTheElement();
-            synchronized (sumLocker) {
-                result += element;
-                tradesConsumed++;
-            }
+            result.getAndUpdate(x -> x + element);
+            tradesConsumed.getAndIncrement();
         }
     }
 
     public static Integer getTradesConsumed() {
-        return tradesConsumed;
+        return tradesConsumed.get();
     }
 
     private Integer pollTheElement() {

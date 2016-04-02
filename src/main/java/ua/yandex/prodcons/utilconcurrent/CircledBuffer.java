@@ -1,4 +1,7 @@
-package ua.yandex.prodcons.threads;
+package ua.yandex.prodcons.utilconcurrent;
+
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Mykola Holovatsky
@@ -10,8 +13,11 @@ public class CircledBuffer<E> {
     private volatile int nextFreePosition = 0;
     private volatile boolean isEmpty = true;
     private volatile boolean isFull = false;
-    private final Object writing = new Object();
-    private final Object reading = new Object();
+    private final ReentrantLock writing = new ReentrantLock();
+    private final ReentrantLock reading = new ReentrantLock();
+    private final Condition notEmpty = reading.newCondition();
+    private final Condition notFull = writing.newCondition();
+
 
     public CircledBuffer() {
         bufferSize = 10;
@@ -25,35 +31,34 @@ public class CircledBuffer<E> {
 
     public E poll() {
         E element;
-        synchronized (reading) {
+        reading.lock();
+        while (isEmpty) {
             try {
-                while (isEmpty) {
-                    reading.wait();
-                }
+                notEmpty.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            element = (E) container[theOldest];
-            theOldest = (theOldest + 1) % bufferSize;
-            if (theOldest == nextFreePosition) {
-                isEmpty = true;
-                isFull = false;
-            }
         }
+        element = (E) container[theOldest];
+        theOldest = (theOldest + 1) % bufferSize;
+        if (theOldest == nextFreePosition) {
+            isEmpty = true;
+            isFull = false;
+        }
+        reading.unlock();
         if (!isFull) {
-            synchronized (writing) {
-                writing.notifyAll();
-            }
+            writing.lock();
+            notFull.signalAll();
+            writing.unlock();
         }
         return element;
     }
 
-
     public void put(E element) {
-        synchronized (writing) {
+        writing.lock();
             try {
                 while (isFull) {
-                    writing.wait();
+                    notFull.await();
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -64,13 +69,12 @@ public class CircledBuffer<E> {
                 isFull = true;
                 isEmpty = false;
             }
-        }
+        writing.unlock();
         if (!isEmpty) {
-            synchronized (reading) {
-                reading.notifyAll();
-            }
+            reading.lock();
+            notEmpty.signalAll();
+            reading.unlock();
         }
-
     }
 
     public boolean isEmpty() {
