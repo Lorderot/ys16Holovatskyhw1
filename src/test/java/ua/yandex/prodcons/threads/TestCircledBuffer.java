@@ -2,17 +2,49 @@ package ua.yandex.prodcons.threads;
 
 import org.junit.Test;
 
-import java.util.Random;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 /**
  * @author Mykola Holovatsky
  */
 public class TestCircledBuffer {
-    private CircledBuffer<Integer> buffer = new CircledBuffer<>(1);
-    private int numberOfTests = 100;
+    @Test
+    public void testCircledBuffer_CheckNotifyingReadingThreads() {
+        CircledBuffer<Integer> buffer = new CircledBuffer<>(2);
+        try {
+            new Thread(new Consumer(buffer)).start();
+            Thread.sleep(100);
+            buffer.put(100);
+            Thread.sleep(1000);
+            assertEquals(new Long(0), Consumer.result);
+            assertEquals(new Integer(1), Consumer.getTradesConsumed());
+            assertEquals(true, buffer.isEmpty());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testCircledBuffer_CheckNotifyingWritingThreads() {
+        CircledBuffer<Integer> buffer = new CircledBuffer<>(2);
+        try {
+            buffer.put(100);
+            buffer.put(100);
+            buffer.poll();
+            assertEquals(false, buffer.isFull());
+            new Thread(new Producer(buffer)).start();
+            Thread.sleep(1000);
+            assertNotEquals(new Long(0), Producer.expectedSum);
+            assertNotEquals(new Integer(0), Producer.getTradesProduced());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Test
     public void testCircledBuffer_BlockingWhenFullOrEmpty() {
+        int numberOfTests = 100;
+        CircledBuffer<Integer> buffer = new CircledBuffer<>(1);
         for (int randomTests = 1; randomTests <= numberOfTests; randomTests++) {
             startOperationsBetweenProducersAndConsumers(randomTests * 20, buffer);
         }

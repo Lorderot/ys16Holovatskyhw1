@@ -37,8 +37,8 @@ public class CircledBuffer<E> {
             theOldest = (theOldest + 1) % bufferSize;
             if (theOldest == nextFreePosition) {
                 isEmpty = true;
-                isFull = false;
             }
+            isFull = false;
         }
         if (!isFull) {
             synchronized (writing) {
@@ -62,8 +62,8 @@ public class CircledBuffer<E> {
             nextFreePosition = (nextFreePosition + 1) % bufferSize;
             if (nextFreePosition == theOldest) {
                 isFull = true;
-                isEmpty = false;
             }
+            isEmpty = false;
         }
         if (!isEmpty) {
             synchronized (reading) {

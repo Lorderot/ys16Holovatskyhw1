@@ -57,7 +57,7 @@ public class Algorithms {
         }
     }
 
-    private static <E extends Comparable<E>> void parallelMerge(
+    private static <E extends Comparable<E>> void parallelMerge (
             E[] source, int start1, int end1,
             int start2, int end2, E[] destination, int start3) {
         int n1 = end1 - start1 + 1;
@@ -110,7 +110,7 @@ public class Algorithms {
         }
     }
 
-    private static <E extends Comparable<E>> int medianBinarySearch(
+    private static <E extends Comparable<E>> int medianBinarySearch (
             E element, E[] a, int left, int right) {
         int leftEdge = left;
         int rightEdge = right + 1;

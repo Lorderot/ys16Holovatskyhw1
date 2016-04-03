@@ -43,8 +43,8 @@ public class CircledBuffer<E> {
         theOldest = (theOldest + 1) % bufferSize;
         if (theOldest == nextFreePosition) {
             isEmpty = true;
-            isFull = false;
         }
+        isFull = false;
         reading.unlock();
         if (!isFull) {
             writing.lock();
@@ -56,19 +56,19 @@ public class CircledBuffer<E> {
 
     public void put(E element) {
         writing.lock();
-            try {
-                while (isFull) {
-                    notFull.await();
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        try {
+            while (isFull) {
+                notFull.await();
             }
-            container[nextFreePosition] = element;
-            nextFreePosition = (nextFreePosition + 1) % bufferSize;
-            if (nextFreePosition == theOldest) {
-                isFull = true;
-                isEmpty = false;
-            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        container[nextFreePosition] = element;
+        nextFreePosition = (nextFreePosition + 1) % bufferSize;
+        if (nextFreePosition == theOldest) {
+            isFull = true;
+        }
+        isEmpty = false;
         writing.unlock();
         if (!isEmpty) {
             reading.lock();
