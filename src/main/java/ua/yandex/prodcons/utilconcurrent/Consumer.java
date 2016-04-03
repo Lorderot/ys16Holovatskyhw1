@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Consumer implements Runnable {
     public static volatile boolean work = true;
     public static AtomicLong result = new AtomicLong(0);
-    private static AtomicInteger tradesConsumed = new AtomicInteger(0);
+    static AtomicInteger tradesConsumed = new AtomicInteger(0);
     private CircledBuffer<Integer> buffer;
 
     public Consumer(CircledBuffer<Integer> buffer) {

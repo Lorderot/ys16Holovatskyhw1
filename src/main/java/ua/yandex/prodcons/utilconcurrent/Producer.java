@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Producer implements Runnable {
     public static AtomicLong expectedSum = new AtomicLong(0);
     public static volatile boolean work = true;
-    private static AtomicInteger tradesProduced = new AtomicInteger(0);
+    static AtomicInteger tradesProduced = new AtomicInteger(0);
     private int limit = 100000;
     private CircledBuffer<Integer> buffer;
     private Random generator = new Random(System.nanoTime());

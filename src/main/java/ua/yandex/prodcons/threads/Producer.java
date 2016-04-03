@@ -8,8 +8,8 @@ import java.util.Random;
 public class Producer implements Runnable {
     public static volatile Long expectedSum = new Long(0);
     public static volatile boolean work = true;
+    static volatile Integer tradesProduced = 0;
     private static final Object sumLocker = new Object();
-    private static volatile Integer tradesProduced = 0;
     private int limit = 100000;
     private CircledBuffer<Integer> buffer;
     private Random generator = new Random(System.nanoTime());

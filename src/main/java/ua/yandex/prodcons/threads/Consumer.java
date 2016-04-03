@@ -6,8 +6,8 @@ package ua.yandex.prodcons.threads;
 public class Consumer implements Runnable {
     public static volatile boolean work = true;
     public static volatile Long result = new Long(0);
+    static volatile Integer tradesConsumed = 0;
     private static final Object sumLocker = new Object();
-    private static volatile Integer tradesConsumed = 0;
     private CircledBuffer<Integer> buffer;
 
     public Consumer(CircledBuffer<Integer> buffer) {

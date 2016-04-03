@@ -26,12 +26,12 @@ public class CircledBuffer<E> {
     public E poll() {
         E element;
         synchronized (reading) {
-            try {
-                while (isEmpty) {
+            while (isEmpty) {
+                try {
                     reading.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
             element = (E) container[theOldest];
             theOldest = (theOldest + 1) % bufferSize;
@@ -47,7 +47,6 @@ public class CircledBuffer<E> {
         }
         return element;
     }
-
 
     public void put(E element) {
         synchronized (writing) {
