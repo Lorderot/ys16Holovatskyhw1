@@ -33,12 +33,8 @@ public class Algorithms {
             if (Thread.activeCount() > optimalNumberOfThreads) {
                 parallelMergeSort(clazz, a, fromIndex, median, newStorage, 0);
             } else {
-                thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        parallelMergeSort(clazz, a, fromIndex, median, newStorage, 0);
-                    }
-                });
+                thread = new Thread(() -> parallelMergeSort(clazz, a,
+                        fromIndex, median, newStorage, 0));
                 thread.start();
             }
             parallelMergeSort(clazz, a, median + 1, toIndex, newStorage,
@@ -89,13 +85,9 @@ public class Algorithms {
                 parallelMerge(source, s1, median1 - 1,
                         s2, median2 - 1, destination, start3);
             } else {
-                thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
+                thread = new Thread(() ->
                         parallelMerge(source, s1, median1 - 1,
-                                s2, median2 - 1, destination, start3);
-                    }
-                });
+                                s2, median2 - 1, destination, start3));
                 thread.start();
             }
             parallelMerge(source, median1 + 1, end1, median2, end2,

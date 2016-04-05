@@ -1,38 +1,43 @@
 package ua.yandex.prodcons.utilconcurrent;
 
+import ua.yandex.prodcons.CircledBuffer;
+
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Mykola Holovatsky
  */
-public class CircledBuffer<E> {
+public class UtilConcurrentCircledBuffer<E>  implements CircledBuffer<E> {
     private int bufferSize;
     private Object[] container;
     private volatile int theOldest = 0;
     private volatile int nextFreePosition = 0;
-    private volatile boolean isEmpty = true;
-    private volatile boolean isFull = false;
+    private volatile boolean delayedIsEmpty = true;
+    private volatile boolean delayedIsFull = false;
+    private volatile boolean reallyIsEmpty = true;
+    private volatile boolean reallyIsFull = false;
     private final ReentrantLock writing = new ReentrantLock();
     private final ReentrantLock reading = new ReentrantLock();
     private final Condition notEmpty = reading.newCondition();
     private final Condition notFull = writing.newCondition();
 
 
-    public CircledBuffer() {
+    public UtilConcurrentCircledBuffer() {
         bufferSize = 10;
         container = new Object[bufferSize];
     }
 
-    public CircledBuffer(int size) {
+    public UtilConcurrentCircledBuffer(int size) {
         this.bufferSize = size;
         container = new Object[size];
     }
 
     public E poll() {
         E element;
+
         reading.lock();
-        while (isEmpty) {
+        while (delayedIsEmpty) {
             try {
                 notEmpty.await();
             } catch (InterruptedException e) {
@@ -40,49 +45,62 @@ public class CircledBuffer<E> {
             }
         }
         element = (E) container[theOldest];
-        theOldest = (theOldest + 1) % bufferSize;
-        if (theOldest == nextFreePosition) {
-            isEmpty = true;
+        if ((theOldest + 1) % bufferSize == nextFreePosition) {
+            delayedIsEmpty = true;
+            reallyIsEmpty = true;
         }
-        isFull = false;
+        theOldest = (theOldest + 1) % bufferSize;
+        reallyIsFull = false;
+
         reading.unlock();
-        if (!isFull) {
+        if (delayedIsFull) {
+
             writing.lock();
+            if (!reallyIsFull) {
+                delayedIsFull = false;
+            }
             notFull.signalAll();
             writing.unlock();
+
         }
         return element;
     }
 
     public void put(E element) {
+
         writing.lock();
         try {
-            while (isFull) {
+            while (delayedIsFull) {
                 notFull.await();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         container[nextFreePosition] = element;
-        nextFreePosition = (nextFreePosition + 1) % bufferSize;
-        if (nextFreePosition == theOldest) {
-            isFull = true;
+        if ((nextFreePosition + 1) % bufferSize == theOldest) {
+            delayedIsFull = true;
+            reallyIsFull = true;
         }
-        isEmpty = false;
+        nextFreePosition = (nextFreePosition + 1) % bufferSize;
+        reallyIsEmpty = false;
         writing.unlock();
-        if (!isEmpty) {
+
+        if (delayedIsEmpty) {
             reading.lock();
+            if (!reallyIsEmpty) {
+                delayedIsEmpty = false;
+            }
             notEmpty.signalAll();
             reading.unlock();
         }
     }
 
     public boolean isEmpty() {
-        return  isEmpty;
+        return reallyIsEmpty;
     }
 
     public boolean isFull() {
-        return isFull;
+        return reallyIsFull;
     }
 
     public int getBufferSize() {

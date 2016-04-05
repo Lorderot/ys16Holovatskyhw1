@@ -1,16 +1,15 @@
-package ua.yandex.prodcons.utilconcurrent;
+package ua.yandex.prodcons;
 
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Mykola Holovatsky
  */
 public class Producer implements Runnable {
-    public static AtomicLong expectedSum = new AtomicLong(0);
+    public static volatile Long expectedSum = new Long(0);
     public static volatile boolean work = true;
-    static AtomicInteger tradesProduced = new AtomicInteger(0);
+    static volatile Integer tradesProduced = 0;
+    private static final Object sumLocker = new Object();
     private int limit = 100000;
     private CircledBuffer<Integer> buffer;
     private Random generator = new Random(System.nanoTime());
@@ -28,7 +27,7 @@ public class Producer implements Runnable {
     }
 
     public static Integer getTradesProduced() {
-        return tradesProduced.get();
+        return tradesProduced;
     }
 
     @Override
@@ -36,8 +35,10 @@ public class Producer implements Runnable {
         while (work) {
             Integer element = produceTheElement();
             putToTheBuffer(element);
-            expectedSum.getAndUpdate(x -> x + element);
-            tradesProduced.getAndIncrement();
+            synchronized (sumLocker) {
+                expectedSum += element;
+                tradesProduced++;
+            }
         }
     }
 }

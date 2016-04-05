@@ -1,4 +1,4 @@
-package ua.yandex.prodcons.threads;
+package ua.yandex.prodcons;
 
 /**
  * @author Mykola Holovatsky
