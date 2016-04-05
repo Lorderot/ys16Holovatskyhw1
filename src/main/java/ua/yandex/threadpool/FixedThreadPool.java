@@ -1,6 +1,6 @@
 package ua.yandex.threadpool;
 
-import ua.yandex.prodcons.threads.CircledBuffer;
+import ua.yandex.prodcons.threads.ThreadsCircledBuffer;
 
 /**
  * @author Mykola Holovatsky
@@ -9,9 +9,9 @@ public class FixedThreadPool {
     public static final int MAX_QUEUE_SIZE = 100000000;
     public static final int DEFAULT_QUEUE_SIZE = 10000;
     private final int poolSize;
-    private final int queueSize;
+    private static volatile int waiters = 0;
     private Thread[] pool;
-    private final CircledBuffer<Runnable> taskQueue;
+    private final ThreadsCircledBuffer<Runnable> taskQueue;
 
     public FixedThreadPool(int size) {
         this(size, DEFAULT_QUEUE_SIZE);
@@ -19,12 +19,10 @@ public class FixedThreadPool {
 
     public FixedThreadPool(int size, int queueSize) {
         poolSize = size;
-        if (queueSize < MAX_QUEUE_SIZE) {
-            this.queueSize = queueSize;
-        } else {
-            this.queueSize = MAX_QUEUE_SIZE;
+        if (queueSize > MAX_QUEUE_SIZE) {
+            queueSize = MAX_QUEUE_SIZE;
         }
-        taskQueue = new CircledBuffer<>(queueSize);
+        taskQueue = new ThreadsCircledBuffer<>(queueSize);
         pool = new Thread[poolSize];
         for (int i = 0; i < poolSize; i++) {
             pool[i] = new Thread(() -> {
@@ -33,7 +31,9 @@ public class FixedThreadPool {
                         synchronized (taskQueue) {
                             while (taskQueue.isEmpty()) {
                                 try {
+                                    waiters++;
                                     taskQueue.wait();
+                                    waiters--;
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -48,13 +48,15 @@ public class FixedThreadPool {
     }
 
     public void execute(Runnable task) {
-        if (taskQueue.isEmpty()) {
+        if (waiters > 0) {
             synchronized (taskQueue) {
                 taskQueue.notifyAll();
-                taskQueue.put(task);
             }
-        } else {
-            taskQueue.put(task);
         }
+        taskQueue.put(task);
+    }
+
+    public boolean hasAnyTask() {
+        return !taskQueue.isEmpty();
     }
 }
