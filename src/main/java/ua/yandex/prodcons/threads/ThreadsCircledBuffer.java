@@ -14,8 +14,8 @@ public class ThreadsCircledBuffer<E> implements CircledBuffer<E> {
     private volatile boolean delayedIsFull = false;
     private volatile boolean reallyIsEmpty = true;
     private volatile boolean reallyIsFull = false;
-    final Object writing = new Object();
-    final Object reading = new Object();
+    private final Object writing = new Object();
+    private final Object reading = new Object();
 
     public ThreadsCircledBuffer() {
         bufferSize = 10;
